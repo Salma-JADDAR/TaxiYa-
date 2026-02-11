@@ -1,31 +1,78 @@
 <?php
+// app/Models/User.php
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
         'email',
         'phone',
-        'password'
+        'password',
+        'type',
+        'validated'
     ];
 
-    public function voyageur()
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'validated' => 'boolean',
+    ];
+
+    // Relation avec les taxis (pour les chauffeurs)
+    public function taxis()
     {
-        return $this->hasOne(Voyageur::class);
+        return $this->hasMany(Taxi::class, 'chauffeur_id');
     }
 
-    public function chauffeur()
+    // Relation avec les trajets créés (pour les chauffeurs)
+    public function trajetsChauffeur()
     {
-        return $this->hasOne(Chauffeur::class);
+        return $this->hasMany(Trajet::class, 'chauffeur_id');
+    }
+
+    // Relation avec les réservations (pour les voyageurs)
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class, 'voyageur_id');
+    }
+
+    // Relation avec les notifications
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    // Vérifier si l'utilisateur est un chauffeur
+    public function isChauffeur()
+    {
+        return $this->type === 'chauffeur';
+    }
+
+    // Vérifier si l'utilisateur est un voyageur
+    public function isVoyageur()
+    {
+        return $this->type === 'voyageur';
+    }
+
+    // Scopes
+    public function scopeChauffeurs($query)
+    {
+        return $query->where('type', 'chauffeur');
+    }
+
+    public function scopeVoyageurs($query)
+    {
+        return $query->where('type', 'voyageur');
     }
 }
